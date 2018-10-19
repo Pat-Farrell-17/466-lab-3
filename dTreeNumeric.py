@@ -53,9 +53,18 @@ def entropyBinSplit(D, attr, splitVal):
     # Rest of D (all d in D s.t. d[attr] > splitVal)
     Dgt = Dsplit[1]
 
+
     # Calculate the entropy of the split and return it
-    return - ( (len(Dlt) / len(D)) * entropy(Dlt) -
-                ( (len(Dgt) / len(D)) * entropy(Dgt)))
+    entr =  ( (len(Dlt) / len(D)) * entropy(Dlt) ) + ( (len(Dgt) / len(D)) * entropy(Dgt))
+
+    """print("\nSplitting {} on {}".format(attr, splitVal))
+    print("\n\tLength of Dlt : {}".format(len(Dlt)))
+    print("\tLenght of Dgt: {}".format(len(Dgt)))
+    print("\n\tEntropy of left split : {}".format(entropy(Dlt)))
+    print("\tEntropy of right split : {}".format(entropy(Dgt)))
+    print("\tEntropy of split : {}".format(entr))
+"""
+    return entr
 
 # Splits D into two sets (X, Y)
 # where X is every data point d in D s.t. d[attr] <= splitVal
@@ -79,7 +88,7 @@ def splitOnVal(D, attr, splitVal):
 def selectSpittingAttributeN(A, D, threshold):
     # Calculate current entropy of the dataset and init variables
     initEntropy = entropy(D)
-    gain, entropy = {}, {}
+    gain, entrpy = {}, {}
     maxGain = 0
     best = ""
 
@@ -92,18 +101,18 @@ def selectSpittingAttributeN(A, D, threshold):
         # best value to do a binary split on
         if True:
             toSplit = findBestSplit(attr, D)
-            entropy[attr] = entropyBinSplit(D, attr, toSplit)
+            entrpy[attr] = entropyBinSplit(D, attr, toSplit)
         else:
-            entropy[attr] = entropy(D)
+            entrpy[attr] = entropy(D)
 
-        infoGain = initEntropy - entropy[attr]
+        infoGain = initEntropy - entrpy[attr]
         # Keep track of highest info gain and the corresponding split
         # attribute
         if infoGain > maxGain:
             maxGain = infoGain
             best = attr
 
-        gain[attr] = initEntropy - entropy[attr]
+        gain[attr] = initEntropy - entrpy[attr]
 
     return best if gain[best] > threshold else None
 
@@ -133,16 +142,16 @@ def findBestSplit(attr, D):
         if infoGain > maxGain:
             bestSplit = val
             maxGain = infoGain
-        #print("Info gain for splitting on {}\t:\t{}".format(val, infoGain))
+        print("Info gain for splitting {} on {}\t:\t{}".format(attr, val, infoGain))
         gain[val] = initEntropy - entropySplit
 
-    return (bestSplit, maxGain)
+    return bestSplit
 
 
 def main():
 
     # This is all just testing bs
-    d = parsing.parseIris("E:\Documents\CSC466\Lab 3\\466-lab-3.git\\trunk\iris.data")
+    d=parsing.parseIris(r"C:\Users\Ian\Documents\CSC466\Lab03\466-lab-3.git\trunk\iris.data")
     attributes = list(d[0].keys())
     print(attributes)
     print("Length of dataset: {}".format(len(d)))
