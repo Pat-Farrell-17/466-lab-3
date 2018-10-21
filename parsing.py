@@ -1,40 +1,40 @@
 import json, sys, copy
 
-def parseIris(filename):
-    dataPoints = []
-    dataDict = {}
-    attributes = ['Sepal Length', 'Sepal Width', 'Petal Length', 'Petal Width', 'Class']
+def parseData(filename):
+    dataPoints, attribs, attribTypes = [], [], []
+
     with open(filename, 'r') as file:
-    	for line in file.read().split('\n'):
-            if len(line) > 0:
-                dataPoints.append(line.split(','))
+        lines = file.read().strip().split('\n')
+        attribs = lines[0].split(',')
+        attribTypes = lines[1].split(',')
 
-    dataDict = makeDict(attributes, dataPoints)
-    return dataDict
+        if not len(attribs) == len(attribTypes):
+            print("\t< Error in data file > # attribs : {}\t# attribTypes : {}"\
+                .format(len(attribs), len(attribTypes)))
+            print("\tNumber of attributes specified does not match number of " +
+                    "attribute types")
+            return None
 
-def makeDict(attr, D):
-    data = []
-    dP = {}
-    i = 0
+        for line in lines[2:]:
+            row = line.split(',')
+            dataDict = {}
 
-    for dataPoint in D:
-        for attribute in attr:
-            if attribute == 'Class':
-                dP[attribute] = dataPoint[i]
-            else:
-                dP[attribute] = float(dataPoint[i])
-            i+= 1
-        data.append(copy.deepcopy(dP))
-        i = 0
+            for i, attrib in enumerate(attribs):
+                if attribTypes[i] == 'n':
+                    dataDict[attrib] = float(row[i])
+                else:
+                    dataDict[attrib] = row[i]
 
-    return data
+            dataPoints.append(dataDict)
+    return (dataPoints, attribs)
 
 def main():
+    shrooms =r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\agaricus-lepiota.data.csv"
+    iris = r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\iris.data"
 
-	d = parseIris("E:\Documents\CSC466\Lab 3\iris.data")
-	for dP in d:
-		print(dP)
-	#print(json.dumps(parse(sys.argv[1]), indent=2))
+    d = parseData(shrooms)
+    for dP in d:
+        print(dP)
 
 if __name__ == '__main__':
 	main()

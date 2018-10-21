@@ -11,7 +11,7 @@ def getVals(D, attribute):
     return set([d[attribute] for d in D])
 
 def categoryCounts(data):
-    categories = [dict['Class'] for dict in data]
+    categories = [d['Class'] for d in data]
     return dict(collections.Counter(categories))
 
 def mostFrequentCategory(data):
@@ -19,16 +19,37 @@ def mostFrequentCategory(data):
     return max(dict.keys(), key=lambda key: dict[key])
 
 def entropy(data):
-	n = len(data)
-	return -sum(cnt / n * math.log2(cnt / n) for
+    n = len(data)
+    return -sum(cnt / n * math.log2(cnt / n) for
         cnt in categoryCounts(data).values())
 
 def isUniform(list):
     return len(set(list)) <= 1
 
-# TODO implement
-def isContinuous(attribute):
-    return None
+def getEnd(className):
+    if className == "Iris-setosa":
+    	return 1
+    elif className == "Iris-versicolor":
+    	return 2
+    elif className == "Iris-virginica":
+        return 3
+    else:
+    	return -1
+
+def outputXML(root):
+	num = 1;
+	rootNode = etree.Element("node", var="{}".format(root.name))
+	for child in root.children:
+		edge = etree.Element("edge", var="{}".format(child.label), num ="{}".format(num))
+		num+=1
+		rootNode.append(edge)
+		if child.children:
+			childNode = outputXML(child)
+		else:
+			childNode = etree.Element("decision", choice="{}".format(child.name), end="{}".format(getEnd(child.name)))
+		edge.append(childNode)
+
+	return rootNode
 
 # Restricts the attribute list to use for C4.5 based on optional commandline
 # argument file
@@ -43,6 +64,18 @@ def restrictAttrib(att, restr):
 			attR.append(attribute)
 	return attR
 
+# Takes a list of dictionaries as data and an attribute
+# and returns a dictionary where each key is a value in
+# the domain of attribute and the values are all data
+# points that have that value in them
+def groupByAttribute(data, attribute):
+	attributeDict = {}
+	for row in data:
+		if row[attribute] not in attributeDict:
+			attributeDict[row[attribute]] = []
+		attributeDict[row[attribute]].append(row)
+	return attributeDict
+
 # Calculates the entropy of splitting D on attr with splitVal as
 # the split point
 def entropyBinSplit(D, attr, splitVal):
@@ -53,18 +86,8 @@ def entropyBinSplit(D, attr, splitVal):
     # Rest of D (all d in D s.t. d[attr] > splitVal)
     Dgt = Dsplit[1]
 
-
     # Calculate the entropy of the split and return it
-    entr =  ( (len(Dlt) / len(D)) * entropy(Dlt) ) + ( (len(Dgt) / len(D)) * entropy(Dgt))
-
-    """print("\nSplitting {} on {}".format(attr, splitVal))
-    print("\n\tLength of Dlt : {}".format(len(Dlt)))
-    print("\tLenght of Dgt: {}".format(len(Dgt)))
-    print("\n\tEntropy of left split : {}".format(entropy(Dlt)))
-    print("\tEntropy of right split : {}".format(entropy(Dgt)))
-    print("\tEntropy of split : {}".format(entr))
-"""
-    return entr
+    return ( (len(Dlt) / len(D)) * entropy(Dlt) ) + ( (len(Dgt) / len(D)) * entropy(Dgt))
 
 # Splits D into two sets (X, Y)
 # where X is every data point d in D s.t. d[attr] <= splitVal
@@ -78,43 +101,45 @@ def splitOnVal(D, attr, splitVal):
             gt.append(d)
     return (lt, gt)
 
-# ================= End Helper Functions ======================================
-
 #       Modified selection method to use numeric data
 # Input:    A - List of attributes
 #           D - Set of data
 #           threshold - information gain threshold to use
 # Ouput:    Attribute in A with the highest information gain
-def selectSpittingAttributeN(A, D, threshold):
+def selectSplittingAttributeN(attribs, data, threshold):
     # Calculate current entropy of the dataset and init variables
-    initEntropy = entropy(D)
+    initEntropy = entropy(data)
     gain, entrpy = {}, {}
-    maxGain = 0
-    best = ""
-
-    for attr in A:
+    maxGain, toSplit = 0, 0
+    bestVal = -1
+    best = "nothin"
+    gain[best] = 0
+    for attr in attribs:
         # Ignore class labels for splitting purposes
         if attr == 'Class':
             continue
-
         # If the attribute is continuous, find the entropy of the
         # best value to do a binary split on
-        if True:
-            toSplit = findBestSplit(attr, D)
-            entrpy[attr] = entropyBinSplit(D, attr, toSplit)
+        if isinstance(data[0][attr], float):
+            toSplit = findBestSplit(attr, data)
+            entrpy[attr] = entropyBinSplit(data, attr, toSplit)
         else:
-            entrpy[attr] = entropy(D)
+            attributeDict = groupByAttribute(data, attr)
+            entropyAfterSplit = sum(len(group) / len(data) * entropy(group) for
+                group in attributeDict.values())
+            entrpy[attr] = entropyAfterSplit
 
         infoGain = initEntropy - entrpy[attr]
+        #print("Info gain of {}\t\t:\t{}".format(attr, infoGain))
         # Keep track of highest info gain and the corresponding split
-        # attribute
+        # attribute and val
         if infoGain > maxGain:
             maxGain = infoGain
             best = attr
+            bestVal = toSplit
 
         gain[attr] = initEntropy - entrpy[attr]
-
-    return best if gain[best] > threshold else None
+    return (best, bestVal) if gain[best] > threshold else None
 
 # Finds the value of attr that will give the highest information gain
 # when split on
@@ -136,30 +161,99 @@ def findBestSplit(attr, D):
     for val in counts.keys():
         entropySplit = entropyBinSplit(D, attr, val)
         infoGain = initEntropy - entropySplit
-
         # Keep track of the highest info gain and the corresponding
         # split value
         if infoGain > maxGain:
             bestSplit = val
             maxGain = infoGain
-        print("Info gain for splitting {} on {}\t:\t{}".format(attr, val, infoGain))
+        #print("Info gain for splitting {} on {}\t:\t{}".format(attr, val, infoGain))
         gain[val] = initEntropy - entropySplit
 
     return bestSplit
 
+# ================= End Helper Functions ======================================
+
+# C4.5 Decision Tree Algorithm
+def build(data, attributes, tree, threshold):
+
+    if isUniform(d['Class'] for d in data):    # All class labels are the same
+    	tree.setName(data[0]['Class'])
+    elif len(attributes) == 0:                 # No more attributes
+    	tree.setName(mostFrequentCategory(data))
+    else:
+        bestAttribute = selectSplittingAttributeN(attributes, data, threshold)
+        if not bestAttribute:                  # No best attribute to split on
+        	tree.setName(mostFrequentCategory(data))
+        else:
+            valToSplit = bestAttribute[1]   # -1 if attribute is categorical
+            bestAttribute = bestAttribute[0]
+
+            tree.setName(bestAttribute)
+            if valToSplit > 0: # attribute is continuous
+                # Split data on valToSplit
+                splits = splitOnVal(data, bestAttribute, valToSplit)
+
+                # Recursive call on data <= split val
+                nodeLT = Node(None, "<= {}".format(valToSplit))
+                tree.addChild(nodeLT)
+                build(splits[0], attributes, nodeLT, threshold)
+
+                # Recursive call on data > split val
+                nodeGT = Node(None, "> {}".format(valToSplit))
+                tree.addChild(nodeGT)
+                build(splits[1], attributes, nodeGT, threshold)
+
+            else:               # attribute is categorical
+                attributeDict = groupByAttribute(data, bestAttribute)
+                for attributeName in attributeDict.keys():
+                    newData = attributeDict[attributeName]
+
+                    if len(newData) > 0:
+                        newAttributes = list(attributes)
+                        newAttributes.remove(bestAttribute)
+
+                        childNode = Node(None, attributeName)
+                        tree.addChild(childNode)
+                        build(newData, newAttributes, childNode, threshold)
+
 
 def main():
+    if not len(sys.argv) >= 2:
+        print("\t\tMissing arguments\n\tProper Call :\tpython dec.py <CSVFile> [<Restrictions>]")
+        return
 
-    # This is all just testing bs
-    d=parsing.parseIris(r"C:\Users\Ian\Documents\CSC466\Lab03\466-lab-3.git\trunk\iris.data")
-    attributes = list(d[0].keys())
-    print(attributes)
-    print("Length of dataset: {}".format(len(d)))
-    """for dP in d:
-    	print(dP)
+    dataFile = sys.argv[1]
+
+    d = parsing.parseData(dataFile)
+    data = d[0]
+    attributes = d[1]
+
+    if len(sys.argv) == 3:
+        restrFile = sys.argv[2]
+        with open(restrFile, 'r') as file:
+            restr = file.read().split(',')
+
+        attributes = restrictAttrib(attributes[:-1], restr[1:])
+
     """
-    toSplit = selectSpittingAttributeN(attributes, d, 0.01)
-    print(toSplit)
+    # This is all just print testing bs
+    shrooms=r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\agaricus-lepiota.data.csv"
+    iris = r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\iris.data"
+    d = parsing.parseData(iris)
+    data = d[0]
+    attributes = d[1]
+    print(attributes)
+    print("Number of records : {}\nWith  {}  different attributes"
+        .format(len(data), len(attributes)))
+    #s = selectSplittingAttributeN(attributes, data, 0.01)
+    #en = entropyBinSplit(data, s[0], s[1])
+    #print(en)
+    """
+    root = Node('Root', None)
+    build(data, attributes, root, 0.1)
+    xmlOutput = etree.tostring(outputXML(root), pretty_print=True, encoding='unicode')
+    print(xmlOutput)
+
 
 
 
