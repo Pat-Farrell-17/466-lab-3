@@ -11,6 +11,7 @@ the first two lines of the file:
             type1,type2,...,typeN
 
 Attribute types are either c for categorical or n for numeric.
+Attribute name for class labels must be Class.
 
 Example header (Iris Dataset):
 
