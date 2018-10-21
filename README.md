@@ -14,5 +14,5 @@ Attribute types are either c for categorical or n for numeric.
 
 Example header (Iris Dataset):
 
-Sepal Length,Sepal Width,Petal Length,Petal Width,Class
-n,n,n,n,c
+            Sepal Length,Sepal Width,Petal Length,Petal Width,Class
+            n,n,n,n,c
