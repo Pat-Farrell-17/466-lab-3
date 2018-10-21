@@ -8,7 +8,7 @@ All input files for dTreeNumeric.py MUST have the following header as
 the first two lines of the file:
 
             attribute1,attribute2,...,attributeN
-            tpye1,type2,...,typeN
+            type1,type2,...,typeN
 
 Attribute types are either c for categorical or n for numeric.
 
