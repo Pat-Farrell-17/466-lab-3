@@ -31,6 +31,12 @@ def getTrainingSet(dataFolds, holdoutSetIndex):
 
 	return trainingSet
 
+def isNumeric(data):
+	key = sorted(data.keys())[0]
+	if key == 'Class':
+		key = sorted(data.keys())[1]
+	return isinstance(data[key], float)
+
 def tenFoldCrossValidation(data, attributes, numAttributes, numDataPoints, numTrees):
 	dataCopy = list(data)
 	random.shuffle(dataCopy)
@@ -53,6 +59,8 @@ def tenFoldCrossValidation(data, attributes, numAttributes, numDataPoints, numTr
 def randomForest(data, attributes, numAttributes, numDataPoints, numTrees, holdoutSet):
 	trees = []
 	uncategorizedPoints = 0
+	numeric = isNumeric(data[0])
+
 	for _ in range(numTrees):
 		randomData, randomAttributes = selectRandomData(data, attributes, numAttributes, numDataPoints)
 		currentTree = Node('Root', None)
@@ -61,7 +69,10 @@ def randomForest(data, attributes, numAttributes, numDataPoints, numTrees, holdo
 
 	bestClassifs = []
 	for index, dataPoint in enumerate(holdoutSet):
-		classifs = [classifyPointCat(tree, dataPoint) for tree in trees]
+		if numeric:
+			classifs = [classifyPointNum(tree, dataPoint) for tree in trees]
+		else:
+			classifs = [classifyPointCat(tree, dataPoint) for tree in trees]
 		classifs = list(filter(lambda x: x is not None, classifs))
 		if len(classifs) == 0:
 			uncategorizedPoints += 1
