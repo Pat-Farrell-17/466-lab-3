@@ -1,30 +1,32 @@
-import decisionTree as dt
-import xmltodict
-import csvParser
-import random
-import sys
-import copy
+import dTreeNumeric as dt
+import xmltodict, parsing, random, sys, copy
 from TreeNode import Node
 
-def classL():
-    c = random.randint(0,1)
-    if c == 1:
-        return "Obama"
-    else:
-        return "McCain"
 
-# Takes a decision tree and a data point to classify and returns
-# the predicted class label
-def classifyPoint(tree, dataPoint):
+# Takes a decision tree and a data point (NUMERIC ATTRIBUTES) to classify and
+# returns the predicted class label
+def classifyPointNum(tree, dataPoint):
+    while tree.children:
+        category = tree.name
+        splitVal = float(tree.children[0].label.split()[1])
+
+        if dataPoint[category] <= splitVal:
+            tree = tree.children[0]
+        else:
+            tree = tree.children[1]
+
+    return tree.name
+
+def classifyPointCat(tree, dataPoint):
     while tree.children:
         category = tree.name
         for child in tree.children:
+
             if dataPoint[category] == child.label:
                 tree = child
-        if not dataPoint[category] == tree.label: # no good branch
-            return classL()
 
     return tree.name
+
 
 # Takes a decision tree and a collection of data to classify and returns
 # a list of tuples where each tuple is of the form:
@@ -40,12 +42,12 @@ def classifyCollection(tree, data):
     return classification
 
 def isTrainingSet(data):
-    return ('Category' in data[1].keys())
+    return ('Class' in data[1].keys())
 
 def removeClassLabels(data):
     dc = copy.deepcopy(data)
     for d in dc:
-        d.pop("Category")
+        d.pop("Class")
     return dc
 
 def accuracy(numRecords, numErrors):
@@ -60,23 +62,21 @@ def errors(numRecords, numErrors):
         p_err = 0
     return p_err
 
-def buildTree(filename):
-    root = Node('Root', None)
-    print("building tree...")
-    with open(filename, 'r') as xmlFile:
-        xml = xmlFile.read()
-        d = xmltodict.parse(xml)
-
-    print(d)
-    print("\n\n")
-    while d:
-        for key, val in d.items():
-            print("KEY: {}\nVAL: {}".format(key, val))
-            d = val
-            print("\n\nNEW D: {}".format(d))
-
 def main():
-    if not len(sys.argv) == 3:
+
+    shrooms=r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\agaricus-lepiota.data.csv"
+    iris = r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\iris.data"
+    d = parsing.parseData(shrooms)
+    data = d[0]
+    attributes = d[1]
+
+    root = Node('Root', None)
+    dt.build(data, attributes, root, 0.1)
+    print("**",classifyPointCat(root, data[1000]))
+
+
+
+    """if not len(sys.argv) == 3:
         print("\t\tMissing arguments\n\tProper Call :\tpython classify.py <CSVFile> <XMLFile>")
         return
 
@@ -135,7 +135,7 @@ def main():
         print("Accuracy:\t\t\t\t{}%".format(accuracy(tot, numErr)))
         print("Error rate:\t\t\t\t{}%".format(errors(tot, numErr)))
 
-
+    """
 
 
 if __name__ == '__main__':
