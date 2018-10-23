@@ -1,5 +1,4 @@
-import parsing, collections, math, sys
-import copy
+import parsing, collections, math, sys, copy
 from TreeNode import Node
 from operator import itemgetter
 from lxml import etree
@@ -26,13 +25,17 @@ def entropy(data):
 def isUniform(list):
     return len(set(list)) <= 1
 
-def getEnd(className):
-    if className == "Iris-setosa":
-    	return 1
-    elif className == "Iris-versicolor":
-    	return 2
-    elif className == "Iris-virginica":
-        return 3
+def getDecision(className):
+    irisClasses = ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+    shroomClasses = ["e", "p"]
+    letterClasses = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
+        "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "X", "Y", "Z"]
+    if className in irisClasses:
+    	return irisClasses.index(className) + 1
+    elif className in shroomClasses:
+    	return shroomClasses.index(className) + 1
+    elif className in letterClasses:
+        return letterClasses.index(className) + 1
     else:
     	return -1
 
@@ -46,7 +49,7 @@ def outputXML(root):
 		if child.children:
 			childNode = outputXML(child)
 		else:
-			childNode = etree.Element("decision", choice="{}".format(child.name), end="{}".format(getEnd(child.name)))
+			childNode = etree.Element("decision", choice="{}".format(child.name), end="{}".format(getDecision(child.name)))
 		edge.append(childNode)
 
 	return rootNode
@@ -218,8 +221,9 @@ def build(data, attributes, tree, threshold):
 
 
 def main():
+    """
     if not len(sys.argv) >= 2:
-        print("\t\tMissing arguments\n\tProper Call :\tpython dec.py <CSVFile> [<Restrictions>]")
+        print("\t\tMissing arguments\n\tProper Call :\tpython C45.py <CSVFile> [<Restrictions>]")
         return
 
     dataFile = sys.argv[1]
@@ -239,18 +243,18 @@ def main():
     # This is all just print testing bs
     shrooms=r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\agaricus-lepiota.data.csv"
     iris = r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\iris.data"
-    d = parsing.parseData(iris)
-    data = d[0]
-    attributes = d[1]
+    letters=r"E:\Documents\CSC466\Lab 3\466-lab-3.git\trunk\letter-recognition.data.csv"
+    data, attributes = parsing.parseData(letters)
+
     print(attributes)
     print("Number of records : {}\nWith  {}  different attributes"
         .format(len(data), len(attributes)))
     #s = selectSplittingAttributeN(attributes, data, 0.01)
     #en = entropyBinSplit(data, s[0], s[1])
     #print(en)
-    """
+
     root = Node('Root', None)
-    build(data, attributes, root, 0.1)
+    build(data, attributes, root, 0.3)
     xmlOutput = etree.tostring(outputXML(root), pretty_print=True, encoding='unicode')
     print(xmlOutput)
 
