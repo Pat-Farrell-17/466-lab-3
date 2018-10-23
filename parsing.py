@@ -15,7 +15,7 @@ def parseData(filename):
                     "attribute types")
             return None
 
-        for line in lines[2:]:
+        for index, line in enumerate(lines[2:]):
             row = line.split(',')
             dataDict = {}
 
@@ -25,6 +25,7 @@ def parseData(filename):
                 else:
                     dataDict[attrib] = row[i]
 
+            dataDict['id'] = index
             dataPoints.append(dataDict)
     return (dataPoints, attribs)
 

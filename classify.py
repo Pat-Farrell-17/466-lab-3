@@ -20,8 +20,10 @@ def classifyPointNum(tree, dataPoint):
 def classifyPointCat(tree, dataPoint):
     while tree.children:
         category = tree.name
+        validPaths = [child.label for child in tree.children]
+        if dataPoint[category] not in validPaths:
+            return None
         for child in tree.children:
-
             if dataPoint[category] == child.label:
                 tree = child
 
