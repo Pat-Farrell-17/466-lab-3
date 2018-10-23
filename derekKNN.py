@@ -3,11 +3,11 @@ import time
 import math, sys
 
 def euclidianDistance(pointA, pointB, attributes):
-	distances = [(pointA[attribute] - pointB[attribute]) ** 2 for attribute in attributes[:-1]]
+	distances = [(pointA[attribute] - pointB[attribute]) ** 2 for attribute in attributes]
 	return math.sqrt(sum(distances))
 
 def categoricalDistance(pointA, pointB, attributes):
-	matches = sum(1 for attribute in attributes[:-1] if pointA[attribute] == pointB[attribute])
+	matches = sum(1 for attribute in attributes if pointA[attribute] == pointB[attribute])
 	numAttributes = len(attributes) - 1
 	return (numAttributes - matches) / numAttributes
 
@@ -38,10 +38,9 @@ def knn(data, attributes, k, getDistance):
 
 def main():
 	data, attributes = parseData(sys.argv[1])
+	attributes = list(filter(lambda x: x != 'Class', attributes))
 	distanceFunction = euclidianDistance if sys.argv[3] == 'numeric' else categoricalDistance
-	start = time.time()
 	predictions = knn(data, attributes, int(sys.argv[2]), distanceFunction)
-	print(f'Running Time: {time.time() - start}')
 
 	correctPredictions = 0
 	for index, prediction in enumerate(predictions):
